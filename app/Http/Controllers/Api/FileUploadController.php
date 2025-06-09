@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreFileUploadRequest;
 use App\Models\FileUpload;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class FileUploadController extends Controller
 {
@@ -16,10 +16,11 @@ class FileUploadController extends Controller
         $path = $file->store('uploads');
 
         $upload = FileUpload::create([
+            'user_id' => Auth::id(),
             'filename' => $originalName,
-            'path' => $path,
-            'extension' => $file->getClientOriginalExtension(),
-            'size' => $file->getSize(),
+            'filepath' => $path,
+            'file_type' => $file->getClientMimeType(),
+            'is_processed' => false,
         ]);
 
         return response()->json([

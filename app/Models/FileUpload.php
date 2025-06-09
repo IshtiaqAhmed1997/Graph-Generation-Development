@@ -13,6 +13,7 @@ class FileUpload extends Model
         'filepath',
         'file_type',
         'is_processed',
+        'validated_by',
     ];
 
     public function rawRecords(): HasMany

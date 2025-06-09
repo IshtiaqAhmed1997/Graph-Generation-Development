@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('filepath')->nullable();
             $table->string('file_type')->nullable();
             $table->boolean('is_processed')->default(false);
+            $table->foreignId('validated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
