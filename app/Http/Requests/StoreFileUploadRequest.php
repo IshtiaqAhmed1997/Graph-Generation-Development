@@ -8,13 +8,13 @@ class StoreFileUploadRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return true;
     }
 
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,csv,txt|max:10240',
+            'file' => 'required|file|mimes:xlsx,csv|max:10240',
         ];
     }
 
