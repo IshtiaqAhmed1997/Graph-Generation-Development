@@ -11,60 +11,56 @@ class LogFilterTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        // Create a test user and authenticate
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
+
     public function test_logs_page_loads()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user);
-
         $response = $this->get(route('logs.index'));
-
         $response->assertStatus(200);
         $response->assertSee('Upload Logs');
     }
 
     public function test_filter_by_filename()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user);
+        FileUpload::factory()->create(['filename' => 'filter_test_file.xlsx']);
+        FileUpload::factory()->create(['filename' => 'other_file.xlsx']);
 
-        FileUpload::factory()->create([
-            'filename' => 'report_abc.xlsx',
-            'user_id' => $user->id,
-        ]);
+        $response = $this->get(route('logs.index', ['filename' => 'filter_test_file']));
 
-        $response = $this->get(route('logs.index', ['filename' => 'report_abc']));
         $response->assertStatus(200);
-        $response->assertSee('report_abc.xlsx');
+        $response->assertSee('filter_test_file.xlsx');
+        $response->assertDontSee('other_file.xlsx');
     }
 
     public function test_filter_by_status()
     {
-        $user = User::factory()->create();
-        $this->actingAs($user);
-
-        FileUpload::factory()->create([
-            'filename' => 'done.xlsx',
-            'is_processed' => true,
-            'user_id' => $user->id,
-        ]);
+        FileUpload::factory()->create(['filename' => 'processed_file.xlsx', 'is_processed' => true]);
+        FileUpload::factory()->create(['filename' => 'pending_file.xlsx', 'is_processed' => false]);
 
         $response = $this->get(route('logs.index', ['status' => 'processed']));
         $response->assertStatus(200);
-        $response->assertSee('done.xlsx');
+        $response->assertSee('processed_file.xlsx');
+        $response->assertDontSee('pending_file.xlsx');
     }
 
     public function test_filter_by_uploaded_by()
     {
-        $user = User::factory()->create(['name' => 'Ali Tester']);
-        $this->actingAs($user);
+        $userA = User::factory()->create(['name' => 'Uploader A']);
+        $userB = User::factory()->create(['name' => 'Uploader B']);
 
-        FileUpload::factory()->create([
-            'filename' => 'client_log.xlsx',
-            'user_id' => $user->id,
-        ]);
+        FileUpload::factory()->create(['user_id' => $userA->id, 'filename' => 'file_by_a.xlsx']);
+        FileUpload::factory()->create(['user_id' => $userB->id, 'filename' => 'file_by_b.xlsx']);
 
-        $response = $this->get(route('logs.index', ['uploaded_by' => 'Ali']));
+        $response = $this->get(route('logs.index', ['uploaded_by' => 'Uploader A']));
         $response->assertStatus(200);
-        $response->assertSee('client_log.xlsx');
+        $response->assertSee('file_by_a.xlsx');
+        $response->assertDontSee('file_by_b.xlsx');
     }
 }
