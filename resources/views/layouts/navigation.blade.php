@@ -27,6 +27,11 @@
                     <x-nav-link :href="route('logs.index')" :active="request()->routeIs('logs.index')">
                         Logs
                     </x-nav-link>
+
+                    <x-nav-link :href="route('charts.index')" :active="request()->routeIs('charts.index')">
+                        {{ __('Charts') }}
+                    </x-nav-link>
+
                 </div>
 
             </div>
@@ -102,6 +107,11 @@
             <x-responsive-nav-link :href="route('logs.index')" :active="request()->routeIs('logs.index')">
                 Logs
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('charts.index')" :active="request()->routeIs('charts.index')">
+                {{ __('Charts') }}
+            </x-responsive-nav-link>
+
         </div>
 
 

@@ -13,6 +13,13 @@ class RawRecordImport implements ToCollection, WithHeadingRow
 {
     public array $errors = [];
 
+    protected int $fileUploadId;
+
+    public function __construct(int $fileUploadId)
+    {
+        $this->fileUploadId = $fileUploadId;
+    }
+
     public function collection(Collection $rows)
     {
         foreach ($rows as $index => $row) {
@@ -36,7 +43,10 @@ class RawRecordImport implements ToCollection, WithHeadingRow
                     'symbolic_data' => $data['symbolic_data'] ?? null,
                     'accuracy' => $data['accuracy'] ?? null,
                     'cpt_code' => $data['cpt_code'] ?? null,
+                    'file_upload_id' => $this->fileUploadId,
+                    'user_id' => auth()->id(),
                 ]);
+
             }
         }
     }

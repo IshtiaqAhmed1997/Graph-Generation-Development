@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('raw_records', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('file_upload_id')->constrained()->onDelete('cascade');
+            $table->foreignId('file_upload_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('client_name')->nullable();
             $table->string('provider_name')->nullable();
             $table->date('date_of_service');

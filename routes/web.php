@@ -1,8 +1,11 @@
 <?php
 
-use App\Http\Controllers\Api\RawRecordController;
+use App\Http\Controllers\ChartDataController;
+use App\Http\Controllers\ChartViewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RawRecordChartController;
+use App\Http\Controllers\RawRecordController;
 use App\Http\Controllers\UploadController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +25,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/charts', [ChartViewController::class, 'index'])->name('charts.index');
+
+    Route::get('/charts/raw-records', [RawRecordChartController::class, 'index'])->name('charts.raw-records');
+    Route::get('/chart/goals', [ChartDataController::class, 'goalsByAccuracy'])->name('chart.goals');
+    Route::get('/chart/behavior', [ChartDataController::class, 'behaviorByDate'])->name('chart.behavior');
+    Route::get('/chart/programs', [ChartDataController::class, 'programPerformance'])->name('chart.programs');
+
 });
 
 require __DIR__.'/auth.php';

@@ -29,7 +29,7 @@ class UploadController extends Controller
             'is_processed' => false,
         ]);
 
-        $import = new RawRecordImport;
+        $import = new RawRecordImport($upload->id);
         Excel::import($import, $file);
 
         $upload->is_processed = true;
