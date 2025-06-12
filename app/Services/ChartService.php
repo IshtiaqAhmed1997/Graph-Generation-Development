@@ -12,7 +12,7 @@ class ChartService
     {
         return RawRecord::selectRaw('target_text, AVG(accuracy) as avg_accuracy, COUNT(*) as total')
             ->where('user_id', $userId)
-            ->when($client, fn ($q) => $q->where('client_name', $client))
+            ->when($client, fn($q) => $q->where('client_name', $client))
             ->where('billable', true)
             ->whereIn('cpt_code', ['97153', '97154'])
             ->groupBy('target_text')
@@ -25,7 +25,7 @@ class ChartService
     {
         return RawRecord::selectRaw('DATE(date_of_service) as date, SUM(accuracy) as total_accuracy')
             ->where('user_id', $userId)
-            ->when($client, fn ($q) => $q->where('client_name', $client))
+            ->when($client, fn($q) => $q->where('client_name', $client))
             ->where('billable', true)
             ->whereIn('cpt_code', ['97153', '97154'])
             ->groupBy('date')
@@ -37,7 +37,7 @@ class ChartService
     {
         return RawRecord::selectRaw('program_name, AVG(accuracy) as avg_accuracy')
             ->where('user_id', $userId)
-            ->when($client, fn ($q) => $q->where('client_name', $client))
+            ->when($client, fn($q) => $q->where('client_name', $client))
             ->whereNotNull('program_name')
             ->where('billable', true)
             ->whereIn('cpt_code', ['97153', '97154'])
@@ -49,7 +49,7 @@ class ChartService
     public function getRawRecordChart(int $userId, ?string $client = null): array
     {
         $goals = RawRecord::where('user_id', $userId)
-            ->when($client, fn ($q) => $q->where('client_name', $client))
+            ->when($client, fn($q) => $q->where('client_name', $client))
             ->where('billable', true)
             ->whereIn('cpt_code', ['97153', '97154'])
             ->selectRaw('target_text, COUNT(*) as count')
@@ -61,25 +61,62 @@ class ChartService
 
         foreach ($goals as $goal) {
             $records = RawRecord::where('user_id', $userId)
-                ->when($client, fn ($q) => $q->where('client_name', $client))
+                ->when($client, fn($q) => $q->where('client_name', $client))
                 ->where('billable', true)
                 ->whereIn('cpt_code', ['97153', '97154'])
                 ->where('target_text', $goal)
                 ->orderBy('date_of_service')
                 ->get(['date_of_service', 'accuracy']);
 
-            $data = $records->map(fn ($r) => [
+            $data = $records->map(fn($r) => [
                 'x' => $r->date_of_service ? Carbon::parse($r->date_of_service)->format('Y-m-d') : null,
                 'y' => $r->accuracy,
-            ])->filter();
+            ])->filter()->values();
+
+            $trend = $data->map(function ($point, $i) use ($data) {
+                $subset = $data->slice(max(0, $i - 2), 3);
+                $avg = $subset->avg('y');
+                return ['x' => $point['x'], 'y' => round($avg, 2)];
+            });
+
+            $masteryPoints = [];
+            for ($i = 2; $i < count($data); $i++) {
+                if ($data[$i - 2]['y'] >= 80 && $data[$i - 1]['y'] >= 80 && $data[$i]['y'] >= 80) {
+                    $masteryPoints[] = $data[$i];
+                }
+            }
 
             $datasets[] = [
                 'label' => $goal,
                 'data' => $data,
+                'borderColor' => 'rgba(54, 162, 235, 1)',
+                'backgroundColor' => 'rgba(54, 162, 235, 0.2)',
                 'tension' => 0.3,
             ];
+
+            $datasets[] = [
+                'label' => $goal . ' Trend',
+                'data' => $trend,
+                'borderDash' => [5, 5],
+                'borderColor' => 'rgba(255, 159, 64, 1)',
+                'backgroundColor' => 'transparent',
+                'tension' => 0.3,
+            ];
+
+            if (count($masteryPoints)) {
+                $datasets[] = [
+                    'label' => $goal . ' Mastery',
+                    'data' => $masteryPoints,
+                    'type' => 'scatter',
+                    'pointBackgroundColor' => 'green',
+                    'pointRadius' => 6,
+                    'showLine' => false,
+                ];
+            }
         }
 
-        return $datasets;
+       return $datasets;
+
     }
+
 }

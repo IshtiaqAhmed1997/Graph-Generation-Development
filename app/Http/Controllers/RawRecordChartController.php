@@ -20,6 +20,8 @@ class RawRecordChartController extends Controller
         $client = $request->get('client_name');
         $datasets = $this->chartService->getRawRecordChart(auth()->id(), $client);
 
-        return response()->json(['datasets' => $datasets]);
+      return response()->json(['datasets' => $datasets]);
+
     }
+
 }
