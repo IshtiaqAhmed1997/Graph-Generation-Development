@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/chart/goals', [ChartDataController::class, 'goalsByAccuracy'])->name('chart.goals');
     Route::get('/chart/behavior', [ChartDataController::class, 'behaviorByDate'])->name('chart.behavior');
     Route::get('/chart/programs', [ChartDataController::class, 'programPerformance'])->name('chart.programs');
+    Route::post('/charts/store', [RawRecordChartController::class, 'storeChart'])->name('charts.store');
 
 });
 

@@ -18,6 +18,10 @@
         @include('charts.partials.programs')
         @include('charts.partials.progress')
     </div>
+      <script>
+    const clientUploadId = {!! json_encode($latestUploadId) !!};
+</script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>

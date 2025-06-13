@@ -19,6 +19,7 @@ class RawRecordSeeder extends Seeder
                 'client_name' => 'Ali Khan',
                 'provider_name' => 'John Doe',
                 'date_of_service' => '2024-05-01',
+                'user_id' => 1,
                 'program_name' => 'Program A',
                 'target_text' => 'Target A',
                 'raw_data' => '5 correct',
@@ -26,7 +27,7 @@ class RawRecordSeeder extends Seeder
                 'accuracy' => 85,
                 'cpt_code' => '97153',
                 'billable' => true,
-                'file_upload_id' => 7,
+                'file_upload_id' => 10,
                 'processed_at' => Carbon::now(),
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -42,10 +43,12 @@ class RawRecordSeeder extends Seeder
                 'accuracy' => 92,
                 'cpt_code' => '97153',
                 'billable' => true,
-                'file_upload_id' => 7,
+                'file_upload_id' => 10,
                 'processed_at' => Carbon::now(),
                 'created_at' => now(),
                 'updated_at' => now(),
+                'user_id' => 1,
+
             ],
             [
                 'client_name' => 'Ali Khan',
@@ -58,10 +61,12 @@ class RawRecordSeeder extends Seeder
                 'accuracy' => 76,
                 'cpt_code' => '97155',
                 'billable' => true,
-                'file_upload_id' => 7,
+                'file_upload_id' => 10,
                 'processed_at' => Carbon::now(),
                 'created_at' => now(),
                 'updated_at' => now(),
+                'user_id' => 1,
+
             ],
             [
                 'client_name' => 'Ahmed Zubair',
@@ -74,10 +79,12 @@ class RawRecordSeeder extends Seeder
                 'accuracy' => 88,
                 'cpt_code' => '97153',
                 'billable' => true,
-                'file_upload_id' => 7,
+                'file_upload_id' => 10,
                 'processed_at' => Carbon::now(),
                 'created_at' => now(),
                 'updated_at' => now(),
+                'user_id' => 1,
+
             ],
             [
                 'client_name' => 'Ahmed Zubair',
@@ -90,10 +97,12 @@ class RawRecordSeeder extends Seeder
                 'accuracy' => 91,
                 'cpt_code' => '97153',
                 'billable' => true,
-                'file_upload_id' => 7,
+                'file_upload_id' => 10,
                 'processed_at' => Carbon::now(),
                 'created_at' => now(),
                 'updated_at' => now(),
+                'user_id' => 1,
+
             ],
         ]);
 

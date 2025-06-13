@@ -8,12 +8,15 @@ class ChartViewController extends Controller
 {
     public function index()
     {
-        $clients = RawRecord::whereNotNull('client_name')
-            ->where('user_id', auth()->id())
-            ->distinct()
-            ->orderBy('client_name')
-            ->pluck('client_name');
+        $userId = auth()->id();
 
-        return view('charts.index', compact('clients'));
+        $clients = RawRecord::where('user_id', $userId)
+            ->distinct()->pluck('client_name');
+
+        $latestUploadId = RawRecord::where('user_id', $userId)
+            ->latest('id')
+            ->value('file_upload_id');
+
+        return view('charts.index', compact('clients', 'latestUploadId'));
     }
 }
