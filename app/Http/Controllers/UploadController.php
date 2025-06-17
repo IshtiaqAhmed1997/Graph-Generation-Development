@@ -7,7 +7,7 @@ use App\Imports\RawRecordImport;
 use App\Models\FileUpload;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
-
+use App\Jobs\ProcessRawRecords;
 class UploadController extends Controller
 {
     public function index()
@@ -36,12 +36,14 @@ class UploadController extends Controller
         $upload->validated_by = Auth::id();
         $upload->save();
 
-        if (! empty($import->errors)) {
+        ProcessRawRecords::dispatch();
+
+        if (!empty($import->errors)) {
             return redirect()->route('upload.index')
                 ->withErrors($import->errors)
                 ->with('success', 'File processed with some validation errors.');
         }
 
-        return redirect()->route('upload.index')->with('success', 'Fi   le uploaded and processed successfully.');
+        return redirect()->route('upload.index')->with('success', 'File uploaded and processed successfully.');
     }
 }
