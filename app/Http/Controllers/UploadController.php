@@ -42,6 +42,6 @@ class UploadController extends Controller
                 ->with('success', 'File processed with some validation errors.');
         }
 
-        return redirect()->route('upload.index')->with('success', 'File uploaded and processed successfully.');
+        return redirect()->route('upload.index')->with('success', 'Fi   le uploaded and processed successfully.');
     }
 }

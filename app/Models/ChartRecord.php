@@ -15,6 +15,7 @@ class ChartRecord extends Model
         'goal_name',
         'chart_config',
         'chart_image_path',
+        'chart_type',
     ];
 
     protected $casts = [
@@ -29,5 +30,19 @@ class ChartRecord extends Model
     public function fileUpload()
     {
         return $this->belongsTo(FileUpload::class);
+    }
+
+    public function getChartDateRange(): string
+    {
+        if (! is_array($this->chart_data) || ! isset($this->chart_data['labels'])) {
+            return '';
+        }
+
+        $dates = $this->chart_data['labels'];
+        sort($dates);
+        $start = reset($dates);
+        $end = end($dates);
+
+        return "$start to $end";
     }
 }

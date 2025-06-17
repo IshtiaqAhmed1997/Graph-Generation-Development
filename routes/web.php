@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ChartDataController;
+use App\Http\Controllers\ChartExportController;
 use App\Http\Controllers\ChartViewController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ProfileController;
@@ -32,6 +33,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/chart/behavior', [ChartDataController::class, 'behaviorByDate'])->name('chart.behavior');
     Route::get('/chart/programs', [ChartDataController::class, 'programPerformance'])->name('chart.programs');
     Route::post('/charts/store', [RawRecordChartController::class, 'storeChart'])->name('charts.store');
+    Route::get('/charts/pdf', [ChartExportController::class, 'download'])
+        ->middleware('auth')
+        ->name('charts.pdf');
+    Route::get('/charts/download-zip', [ChartExportController::class, 'downloadZip'])->name('charts.download.zip');
+    Route::get('/charts/export', [ChartExportController::class, 'export'])->name('charts.export');
 
 });
 

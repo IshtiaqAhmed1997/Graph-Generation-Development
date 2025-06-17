@@ -6,6 +6,7 @@ use App\Models\ChartRecord;
 use App\Models\RawRecord;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class ChartService
 {
@@ -17,6 +18,7 @@ class ChartService
             ->where('billable', true)
             ->whereIn('cpt_code', ['97153', '97154'])
             ->groupBy('target_text')
+            // ->having('total', '>=', 10)
             ->orderBy('target_text')
             ->get();
     }
@@ -54,6 +56,7 @@ class ChartService
             ->whereIn('cpt_code', ['97153', '97154'])
             ->selectRaw('target_text, COUNT(*) as count')
             ->groupBy('target_text')
+            // ->having('count', '>=', 10)
             ->pluck('target_text');
 
         $datasets = [];
@@ -119,13 +122,43 @@ class ChartService
 
     }
 
-    public function saveGeneratedChart(int $userId, int $uploadId, string $goal, array $chartData, ?string $chartImagePath = null): void
+    public function saveGeneratedChart(int $userId, int $uploadId, ?string $goal, string $chartType, array $chartData, ?string $chartImagePath = null): void
     {
+        if (! isset($chartData['mastery_point']) && isset($chartData['data'])) {
+            $consecutive = 0;
+            foreach ($chartData['data'] as $point) {
+                if (isset($point['y']) && $point['y'] >= 80) {
+                    $consecutive++;
+                    if ($consecutive >= 3) {
+                        $chartData['mastery_point'] = $point['x'];
+                        break;
+                    }
+                } else {
+                    $consecutive = 0;
+                }
+            }
+        }
+
+        $existing = ChartRecord::where([
+            'user_id' => $userId,
+            'file_upload_id' => $uploadId,
+            'goal_name' => $goal,
+            'chart_type' => $chartType,
+        ])->first();
+
+        if ($existing && $existing->chart_image_path) {
+            $oldPath = str_replace('storage/', 'public/', $existing->chart_image_path);
+            if (Storage::exists($oldPath)) {
+                Storage::delete($oldPath);
+            }
+        }
+
         ChartRecord::updateOrCreate(
             [
                 'user_id' => $userId,
                 'file_upload_id' => $uploadId,
                 'goal_name' => $goal,
+                'chart_type' => $chartType,
             ],
             [
                 'chart_config' => $chartData,
