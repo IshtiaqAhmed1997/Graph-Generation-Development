@@ -2,52 +2,86 @@
 
 namespace App\Imports;
 
-use App\Http\Requests\RawRecordRowValidation;
 use App\Models\RawRecord;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Concerns\ToCollection;
-use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Illuminate\Support\Facades\Validator;
+use App\Services\ErrorLogService;
 
-class RawRecordImport implements ToCollection, WithHeadingRow
+class RawRecordImport implements ToCollection
 {
-    public array $errors = [];
+    protected $fileUploadId;
+    protected $fileType;
+    protected $errorLogService;
+    protected $existingCombinations = [];
 
-    protected int $fileUploadId;
-
-    public function __construct(int $fileUploadId)
+    public function __construct($fileUploadId, $fileType, ErrorLogService $errorLogService)
     {
         $this->fileUploadId = $fileUploadId;
+        $this->fileType = $fileType;
+        $this->errorLogService = $errorLogService;
     }
 
     public function collection(Collection $rows)
     {
-        foreach ($rows as $index => $row) {
-            $data = $row->toArray();
+        $headingSkipped = false;
 
-            $validator = Validator::make($data, RawRecordRowValidation::rules());
+        foreach ($rows as $row) {
+            if (!$headingSkipped) {
+                $headingSkipped = true;
+                continue;
+            }
+
+            $date = isset($row[2]) ? date('Y-m-d', strtotime($row[2])) : null;
+            $target = $row[4] ?? null;
+            $comboKey = $target . '|' . $date;
+
+            $data = [
+                'file_upload_id' => $this->fileUploadId,
+                'file_type' => $this->fileType,
+                'client_name' => $row[0] ?? null,
+                'provider_name' => $row[1] ?? null,
+                'date_of_service' => $date,
+                'program_name' => $row[3] ?? null,
+                'target_text' => $target,
+                'raw_data' => $row[5] ?? null,
+                'symbolic_data' => $row[6] ?? null,
+                'accuracy' => is_numeric($row[7]) ? (int) $row[7] : null,
+                'cpt_code' => $row[8] ?? null,
+                'goal_name' => $this->fileType === 'treatment_plan' ? $row[9] ?? null : null,
+                'domain' => $this->fileType === 'treatment_plan' ? $row[10] ?? null : null,
+                'mastery_threshold' => $this->fileType === 'treatment_plan' ? $row[11] ?? null : null,
+                'session_number' => $row[12] ?? null,
+                'notes' => $row[13] ?? null,
+                'billable' => filter_var($row[14] ?? true, FILTER_VALIDATE_BOOLEAN),
+            ];
+
+            $validator = Validator::make($data, [
+                'date_of_service' => 'required|date',
+                'target_text' => 'required|string|max:255',
+                'accuracy' => 'nullable|integer|min:0|max:100',
+                'cpt_code' => 'required|in:97153,97154',
+                'billable' => 'boolean',
+
+            ]);
+
+            if (in_array($comboKey, $this->existingCombinations)) {
+                $this->errorLogService->log($this->fileUploadId, $this->fileType, $row->toArray(), 'Duplicate goal + date');
+                continue;
+            }
 
             if ($validator->fails()) {
-                $this->errors[] = [
-                    'row' => $index + 2,
-                    'messages' => $validator->errors()->all(),
-                ];
-            } else {
-                RawRecord::create([
-                    'client_name' => $data['client_name'],
-                    'provider_name' => $data['provider_name'],
-                    'date_of_service' => $data['date_of_service'],
-                    'program_name' => $data['program_name'] ?? null,
-                    'target_text' => $data['target_text'],
-                    'raw_data' => $data['raw_data'] ?? null,
-                    'symbolic_data' => $data['symbolic_data'] ?? null,
-                    'accuracy' => $data['accuracy'] ?? null,
-                    'cpt_code' => $data['cpt_code'] ?? null,
-                    'file_upload_id' => $this->fileUploadId,
-                    'user_id' => auth()->id(),
-                ]);
-
+                $this->errorLogService->log(
+                    $this->fileUploadId,
+                    $this->fileType,
+                    $row->toArray(),
+                    implode('; ', $validator->errors()->all())
+                );
+                continue;
             }
+
+            RawRecord::create($data);
+            $this->existingCombinations[] = $comboKey;
         }
     }
 }
