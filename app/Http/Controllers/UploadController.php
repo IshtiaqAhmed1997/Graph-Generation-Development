@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreFileUploadRequest;
 use App\Imports\RawRecordImport;
+use App\Jobs\ProcessRawRecords;
 use App\Models\FileUpload;
+use App\Services\AnalyticsService;
+use App\Services\ErrorLogService;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Jobs\ProcessRawRecords;
+
 class UploadController extends Controller
 {
     public function index()
@@ -18,7 +21,6 @@ class UploadController extends Controller
     public function store(StoreFileUploadRequest $request)
     {
         $file = $request->file('file');
-
         $path = $file->store('uploads');
 
         $upload = FileUpload::create([
@@ -29,20 +31,16 @@ class UploadController extends Controller
             'is_processed' => false,
         ]);
 
-        $import = new RawRecordImport($upload->id);
+        $import = new RawRecordImport($upload->id, 'treatment_plan', app(ErrorLogService::class));
         Excel::import($import, $file);
+
+        app(AnalyticsService::class)->processFileUpload($upload->id);
 
         $upload->is_processed = true;
         $upload->validated_by = Auth::id();
         $upload->save();
 
         ProcessRawRecords::dispatch();
-
-        if (!empty($import->errors)) {
-            return redirect()->route('upload.index')
-                ->withErrors($import->errors)
-                ->with('success', 'File processed with some validation errors.');
-        }
 
         return redirect()->route('upload.index')->with('success', 'File uploaded and processed successfully.');
     }

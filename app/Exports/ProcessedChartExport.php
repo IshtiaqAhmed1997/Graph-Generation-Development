@@ -2,8 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\GoalResult;
 use App\Models\FileUpload;
+use App\Models\GoalResult;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -31,14 +31,14 @@ class ProcessedChartExport implements FromCollection, WithHeadings
 
             foreach ($dataPoints as $point) {
                 $exportData[] = [
-                    'Client Name'       => $clientName,
-                    'Upload ID'         => $uploadId,
-                    'Goal Name'         => $goalName,
-                    'Session Date'      => $point['x'],
-                    'Accuracy %'        => $point['y'],
-                    'Final Accuracy %'  => $finalAccuracy,
-                    'Mastery Date'      => $masteryDate ?? '—',
-                    'Authorization #'   => $authNumber,
+                    'Client Name' => $clientName,
+                    'Upload ID' => $uploadId,
+                    'Goal Name' => $goalName,
+                    'Session Date' => $point['x'],
+                    'Accuracy %' => $point['y'],
+                    'Final Accuracy %' => $finalAccuracy,
+                    'Mastery Date' => $masteryDate ?? '—',
+                    'Authorization #' => $authNumber,
                     'Authorization Period' => $authPeriod,
                 ];
             }
@@ -75,6 +75,7 @@ class ProcessedChartExport implements FromCollection, WithHeadings
                 $consecutive = 0;
             }
         }
-          return null;
+
+        return null;
     }
 }

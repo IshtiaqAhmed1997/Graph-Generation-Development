@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('chart_records', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('file_upload_id')->nullable()->constrained()->onDelete('set null');
-            $table->string('goal_name')->nullable();
+            $table->foreignId('file_upload_id')->constrained()->onDelete('cascade');
+            $table->string('client_name')->nullable();
+            $table->string('target_text')->nullable();
+            $table->string( 'goal_name')->nullable();
             $table->string('chart_type')->nullable();
             $table->json('chart_config')->nullable();
             $table->string('chart_image_path')->nullable();

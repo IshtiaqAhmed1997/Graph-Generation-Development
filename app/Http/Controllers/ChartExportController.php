@@ -8,9 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
-use Illuminate\Support\Str;
 
 class ChartExportController extends Controller
 {
@@ -25,7 +25,7 @@ class ChartExportController extends Controller
     {
         $clientName = $request->query('client_name');
 
-        if (!$clientName) {
+        if (! $clientName) {
             abort(400, 'Client name is required.');
         }
 
@@ -34,7 +34,7 @@ class ChartExportController extends Controller
         $pdf = $this->exportService->generateClientPdf($userId, $clientName);
 
         return Response::streamDownload(
-            fn() => print ($pdf->output()),
+            fn () => print ($pdf->output()),
             'client_chart_report.pdf'
         );
     }
@@ -49,7 +49,7 @@ class ChartExportController extends Controller
 
         $path = $chart->chart_image_path;
 
-        if (!$path || !Storage::disk('public')->exists($path)) {
+        if (! $path || ! Storage::disk('public')->exists($path)) {
             abort(404, 'Chart image not found.');
         }
 
@@ -60,7 +60,7 @@ class ChartExportController extends Controller
     {
         $clientName = $request->query('client_name');
 
-        if (!$clientName) {
+        if (! $clientName) {
             abort(400, 'Client name is required.');
         }
 
@@ -79,14 +79,14 @@ class ChartExportController extends Controller
             abort(404, 'No charts found.');
         }
 
-        $zipFileName = 'charts_' . Str::slug($clientName) . '.zip';
+        $zipFileName = 'charts_'.Str::slug($clientName).'.zip';
         $zipPath = storage_path("app/public/exports/{$zipFileName}");
 
-        if (!file_exists(dirname($zipPath))) {
+        if (! file_exists(dirname($zipPath))) {
             mkdir(dirname($zipPath), 0777, true);
         }
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             abort(500, 'Could not create ZIP file.');
         }
@@ -94,7 +94,7 @@ class ChartExportController extends Controller
         foreach ($charts as $chart) {
             $fullPath = public_path($chart->chart_image_path);
             if (file_exists($fullPath)) {
-                $filename = $chart->goal_name . '_' . basename($chart->chart_image_path);
+                $filename = $chart->goal_name.'_'.basename($chart->chart_image_path);
                 $zip->addFile($fullPath, $filename);
             }
         }

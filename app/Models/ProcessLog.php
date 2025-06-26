@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProcessLog extends Model
 {
-   protected $fillable = [
+    protected $fillable = [
         'upload_id',
         'target_text',
         'records_processed',

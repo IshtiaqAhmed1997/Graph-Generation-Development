@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\ChartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ChartDataController extends Controller
 {
@@ -18,7 +19,7 @@ class ChartDataController extends Controller
     public function goalsByAccuracy(Request $request): JsonResponse
     {
         $client = $request->get('client_name');
-        $data = $this->chartService->getGoalsByAccuracy(auth()->id(), $client);
+        $data = $this->chartService->getGoalsByAccuracy($client);
 
         return response()->json([
             'labels' => $data->pluck('target_text'),
@@ -26,25 +27,46 @@ class ChartDataController extends Controller
         ]);
     }
 
-    public function behaviorByDate(Request $request): JsonResponse
+    public function getRawRecordChart(Request $request): JsonResponse
     {
         $client = $request->get('client_name');
-        $data = $this->chartService->getBehaviorByDate(auth()->id(), $client);
+        $datasets = $this->chartService->getRawRecordChart($client);
 
         return response()->json([
-            'labels' => $data->pluck('date'),
-            'values' => $data->pluck('total_accuracy'),
+            'success' => true,
+            'datasets' => $datasets,
         ]);
     }
 
-    public function programPerformance(Request $request): JsonResponse
+    public function saveChart(Request $request): JsonResponse
     {
-        $client = $request->get('client_name');
-        $data = $this->chartService->getProgramPerformance(auth()->id(), $client);
-
-        return response()->json([
-            'labels' => $data->pluck('program_name'),
-            'values' => $data->pluck('avg_accuracy'),
+        $validated = $request->validate([
+            'file_upload_id' => 'required|integer',
+            'client_name'    => 'required|string',
+            'target_text'    => 'required|string',
+            'chart_type'     => 'required|string',
+            'chart_config'   => 'required|array',
+            'chart_image'    => 'nullable|string',
         ]);
+
+        $path = null;
+
+        if (!empty($validated['chart_image'])) {
+            $imageData = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', $validated['chart_image']));
+            $fileName = 'charts/' . uniqid() . '.png';
+            Storage::put("public/{$fileName}", $imageData);
+            $path = "storage/{$fileName}";
+        }
+
+        $this->chartService->saveGeneratedChart(
+            $validated['file_upload_id'],
+            $validated['client_name'],
+            $validated['target_text'],
+            $validated['chart_type'],
+            $validated['chart_config'],
+            $path
+        );
+
+        return response()->json(['success' => true, 'message' => 'Chart saved']);
     }
 }

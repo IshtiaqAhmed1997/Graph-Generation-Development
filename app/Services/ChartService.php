@@ -4,66 +4,36 @@ namespace App\Services;
 
 use App\Models\ChartRecord;
 use App\Models\RawRecord;
-use Carbon\Carbon;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class ChartService
 {
-    public function getGoalsByAccuracy(int $userId, ?string $client = null): Collection
+    public function getGoalsByAccuracy(?string $client = null): Collection
     {
         return RawRecord::selectRaw('target_text, AVG(accuracy) as avg_accuracy, COUNT(*) as total')
-            ->where('user_id', $userId)
             ->when($client, fn ($q) => $q->where('client_name', $client))
             ->where('billable', true)
             ->whereIn('cpt_code', ['97153', '97154'])
             ->groupBy('target_text')
-            // ->having('total', '>=', 10)
             ->orderBy('target_text')
             ->get();
     }
 
-    public function getBehaviorByDate(int $userId, ?string $client = null): Collection
+    public function getRawRecordChart(?string $client = null): array
     {
-        return RawRecord::selectRaw('DATE(date_of_service) as date, SUM(accuracy) as total_accuracy')
-            ->where('user_id', $userId)
-            ->when($client, fn ($q) => $q->where('client_name', $client))
-            ->where('billable', true)
-            ->whereIn('cpt_code', ['97153', '97154'])
-            ->groupBy('date')
-            ->orderBy('date')
-            ->get();
-    }
-
-    public function getProgramPerformance(int $userId, ?string $client = null): Collection
-    {
-        return RawRecord::selectRaw('program_name, AVG(accuracy) as avg_accuracy')
-            ->where('user_id', $userId)
-            ->when($client, fn ($q) => $q->where('client_name', $client))
-            ->whereNotNull('program_name')
-            ->where('billable', true)
-            ->whereIn('cpt_code', ['97153', '97154'])
-            ->groupBy('program_name')
-            ->orderBy('program_name')
-            ->get();
-    }
-
-    public function getRawRecordChart(int $userId, ?string $client = null): array
-    {
-        $goals = RawRecord::where('user_id', $userId)
-            ->when($client, fn ($q) => $q->where('client_name', $client))
+        $goals = RawRecord::when($client, fn ($q) => $q->where('client_name', $client))
             ->where('billable', true)
             ->whereIn('cpt_code', ['97153', '97154'])
             ->selectRaw('target_text, COUNT(*) as count')
             ->groupBy('target_text')
-            // ->having('count', '>=', 10)
             ->pluck('target_text');
 
         $datasets = [];
 
         foreach ($goals as $goal) {
-            $records = RawRecord::where('user_id', $userId)
-                ->when($client, fn ($q) => $q->where('client_name', $client))
+            $records = RawRecord::when($client, fn ($q) => $q->where('client_name', $client))
                 ->where('billable', true)
                 ->whereIn('cpt_code', ['97153', '97154'])
                 ->where('target_text', $goal)
@@ -119,10 +89,9 @@ class ChartService
         }
 
         return $datasets;
-
     }
 
-    public function saveGeneratedChart(int $userId, int $uploadId, ?string $goal, string $chartType, array $chartData, ?string $chartImagePath = null): void
+    public function saveGeneratedChart(int $uploadId, string $client, string $target, string $chartType, array $chartData, ?string $chartImagePath = null): void
     {
         if (! isset($chartData['mastery_point']) && isset($chartData['data'])) {
             $consecutive = 0;
@@ -140,9 +109,9 @@ class ChartService
         }
 
         $existing = ChartRecord::where([
-            'user_id' => $userId,
             'file_upload_id' => $uploadId,
-            'goal_name' => $goal,
+            'client_name' => $client,
+            'target_text' => $target,
             'chart_type' => $chartType,
         ])->first();
 
@@ -155,12 +124,13 @@ class ChartService
 
         ChartRecord::updateOrCreate(
             [
-                'user_id' => $userId,
                 'file_upload_id' => $uploadId,
-                'goal_name' => $goal,
+                'client_name' => $client,
+                'target_text' => $target,
                 'chart_type' => $chartType,
             ],
             [
+                'goal_name' => $target,
                 'chart_config' => $chartData,
                 'chart_image_path' => $chartImagePath,
             ]

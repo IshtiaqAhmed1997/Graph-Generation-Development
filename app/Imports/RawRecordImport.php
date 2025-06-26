@@ -3,16 +3,20 @@
 namespace App\Imports;
 
 use App\Models\RawRecord;
-use Illuminate\Support\Collection;
-use Maatwebsite\Excel\Concerns\ToCollection;
-use Illuminate\Support\Facades\Validator;
 use App\Services\ErrorLogService;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Concerns\ToCollection;
 
 class RawRecordImport implements ToCollection
 {
     protected $fileUploadId;
+
     protected $fileType;
+
     protected $errorLogService;
+
     protected $existingCombinations = [];
 
     public function __construct($fileUploadId, $fileType, ErrorLogService $errorLogService)
@@ -27,14 +31,15 @@ class RawRecordImport implements ToCollection
         $headingSkipped = false;
 
         foreach ($rows as $row) {
-            if (!$headingSkipped) {
+            if (! $headingSkipped) {
                 $headingSkipped = true;
+
                 continue;
             }
 
             $date = isset($row[2]) ? date('Y-m-d', strtotime($row[2])) : null;
             $target = $row[4] ?? null;
-            $comboKey = $target . '|' . $date;
+            $comboKey = $target.'|'.$date;
 
             $data = [
                 'file_upload_id' => $this->fileUploadId,
@@ -46,8 +51,8 @@ class RawRecordImport implements ToCollection
                 'target_text' => $target,
                 'raw_data' => $row[5] ?? null,
                 'symbolic_data' => $row[6] ?? null,
-                'accuracy' => is_numeric($row[7]) ? (int) $row[7] : null,
-                'cpt_code' => $row[8] ?? null,
+                'accuracy' => isset($row[7]) && is_numeric($row[7]) ? (int) $row[7] : null,
+                'cpt_code' => isset($row[8]) ? trim($row[8]) : null,
                 'goal_name' => $this->fileType === 'treatment_plan' ? $row[9] ?? null : null,
                 'domain' => $this->fileType === 'treatment_plan' ? $row[10] ?? null : null,
                 'mastery_threshold' => $this->fileType === 'treatment_plan' ? $row[11] ?? null : null,
@@ -60,23 +65,26 @@ class RawRecordImport implements ToCollection
                 'date_of_service' => 'required|date',
                 'target_text' => 'required|string|max:255',
                 'accuracy' => 'nullable|integer|min:0|max:100',
-                'cpt_code' => 'required|in:97153,97154',
+                'cpt_code' => ['required', Rule::in(['97153', '97155', '97156', '97157'])],
                 'billable' => 'boolean',
 
             ]);
-
             if (in_array($comboKey, $this->existingCombinations)) {
                 $this->errorLogService->log($this->fileUploadId, $this->fileType, $row->toArray(), 'Duplicate goal + date');
+
+
                 continue;
             }
 
             if ($validator->fails()) {
+
                 $this->errorLogService->log(
                     $this->fileUploadId,
                     $this->fileType,
                     $row->toArray(),
                     implode('; ', $validator->errors()->all())
                 );
+
                 continue;
             }
 

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('error_logs', function (Blueprint $table) {
+        Schema::create('error_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('file_upload_id')->nullable()->constrained()->onDelete('cascade');
             $table->string('source');
