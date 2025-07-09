@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ChartXlsxExport;
 class ChartExportController extends Controller
 {
     protected ChartExportService $exportService;
@@ -25,7 +26,7 @@ class ChartExportController extends Controller
     {
         $clientName = $request->query('client_name');
 
-        if (! $clientName) {
+        if (!$clientName) {
             abort(400, 'Client name is required.');
         }
 
@@ -33,8 +34,14 @@ class ChartExportController extends Controller
 
         $pdf = $this->exportService->generateClientPdf($userId, $clientName);
 
+        app(\App\Services\AuditLogService::class)->log(
+            action: 'pdf_export',
+            goalResultId: null,
+            details: "PDF chart report exported for client: {$clientName}",
+            versionId: null
+        );
         return Response::streamDownload(
-            fn () => print ($pdf->output()),
+            fn() => print ($pdf->output()),
             'client_chart_report.pdf'
         );
     }
@@ -49,9 +56,17 @@ class ChartExportController extends Controller
 
         $path = $chart->chart_image_path;
 
-        if (! $path || ! Storage::disk('public')->exists($path)) {
+        if (!$path || !Storage::disk('public')->exists($path)) {
             abort(404, 'Chart image not found.');
         }
+
+        app(\App\Services\AuditLogService::class)->log(
+            action: 'chart_image_download',
+            goalResultId: null,
+            details: "Downloaded chart image (ID: {$chart->id}, Goal: {$chart->goal_name})",
+            versionId: $chart->chart_config['version_id'] ?? null
+        );
+
 
         return Storage::disk('public')->download($path, 'chart.png');
     }
@@ -60,18 +75,17 @@ class ChartExportController extends Controller
     {
         $clientName = $request->query('client_name');
 
-        if (! $clientName) {
+        if (!$clientName) {
             abort(400, 'Client name is required.');
         }
 
         $userId = Auth::id();
 
-        $fileUploadIds = \App\Models\FileUpload::where('user_id', $userId)
-            ->where('client_name', $clientName)
+        // $fileUploadIds = \App\Models\FileUpload::where('user_id', $userId)
+        $fileUploadIds = \App\Models\FileUpload::where('client_name', $clientName)
             ->pluck('id');
 
-        $charts = \App\Models\ChartRecord::where('user_id', $userId)
-            ->whereIn('file_upload_id', $fileUploadIds)
+        $charts = \App\Models\ChartRecord::where('file_upload_id', $fileUploadIds)
             ->whereNotNull('chart_image_path')
             ->get();
 
@@ -79,10 +93,10 @@ class ChartExportController extends Controller
             abort(404, 'No charts found.');
         }
 
-        $zipFileName = 'charts_'.Str::slug($clientName).'.zip';
+        $zipFileName = 'charts_' . Str::slug($clientName) . '.zip';
         $zipPath = storage_path("app/public/exports/{$zipFileName}");
 
-        if (! file_exists(dirname($zipPath))) {
+        if (!file_exists(dirname($zipPath))) {
             mkdir(dirname($zipPath), 0777, true);
         }
 
@@ -94,13 +108,60 @@ class ChartExportController extends Controller
         foreach ($charts as $chart) {
             $fullPath = public_path($chart->chart_image_path);
             if (file_exists($fullPath)) {
-                $filename = $chart->goal_name.'_'.basename($chart->chart_image_path);
+                $filename = $chart->goal_name . '_' . basename($chart->chart_image_path);
                 $zip->addFile($fullPath, $filename);
             }
         }
 
         $zip->close();
 
+        app(\App\Services\AuditLogService::class)->log(
+            action: 'zip_export',
+            goalResultId: null,
+            details: "Downloaded ZIP of charts for client: {$clientName}",
+            versionId: null
+        );
+
         return response()->download($zipPath)->deleteFileAfterSend(true);
+    }
+
+    public function exportXlsx(Request $request)
+    {
+        $clientName = $request->query('client_name');
+        if (!$clientName)
+            abort(400, 'Client name is required.');
+
+        app(\App\Services\AuditLogService::class)->log(
+            action: 'xlsx_export',
+            goalResultId: null,
+            details: "Exported XLSX data for client: {$clientName}",
+            versionId: null
+        );
+
+        return Excel::download(new ChartXlsxExport(Auth::id(), $clientName), 'chart_data_' . $clientName . '.xlsx');
+
+    }
+
+
+    public function exportExcel(Request $request)
+    {
+        $clientName = $request->query('client_name');
+
+        if (!$clientName) {
+            abort(400, 'Client name is required.');
+        }
+
+        $userId = Auth::id();
+        $timestamp = now()->format('Ymd_His');
+        $filename = "chart_export_{$clientName}_{$timestamp}.xlsx";
+
+        app(\App\Services\AuditLogService::class)->log(
+            action: 'xlsx_export',
+            goalResultId: null,
+            details: "Exported XLSX data for client: {$clientName}",
+            versionId: null
+        );
+
+        return Excel::download(new ChartXlsxExport($userId, $clientName), $filename);
     }
 }

@@ -6,6 +6,7 @@ use App\Services\ChartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\AuditLogService;
 
 class ChartDataController extends Controller
 {
@@ -66,6 +67,13 @@ class ChartDataController extends Controller
             $validated['chart_config'],
             $path
         );
+
+        app(AuditLogService::class)->log(
+    action: 'chart_saved',
+    goalResultId: null, // Optional: if you link it to a goal_result_id later
+    details: 'Chart saved for goal: ' . $validated['target_text'],
+    versionId: $validated['chart_config']['version_id'] ?? null
+);
 
         return response()->json(['success' => true, 'message' => 'Chart saved']);
     }

@@ -41,6 +41,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/charts/pdf', [ChartExportController::class, 'download'])->name('charts.pdf');
     Route::get('/charts/download-zip', [ChartExportController::class, 'downloadZip'])->name('charts.download.zip');
     Route::get('/charts/export', [ChartExportController::class, 'export'])->name('charts.export');
+    Route::get('/charts/export-xlsx', [ChartExportController::class, 'exportXlsx'])->name('charts.export.xlsx');
+Route::get('/charts/export-excel', [ChartExportController::class, 'exportExcel'])->name('charts.export.excel');
+
 });
 
 require __DIR__.'/auth.php';
