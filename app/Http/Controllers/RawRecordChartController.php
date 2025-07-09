@@ -8,7 +8,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Services\AuditLogService;
 
 class RawRecordChartController extends Controller
 {
@@ -28,7 +27,7 @@ class RawRecordChartController extends Controller
             ->latest()
             ->first();
 
-        if (!$upload) {
+        if (! $upload) {
             return response()->json([
                 'error' => 'No file upload record found for this client.',
             ], 404);
@@ -46,11 +45,11 @@ class RawRecordChartController extends Controller
     {
         $validated = $request->validate([
             'file_upload_id' => 'required|exists:file_uploads,id',
-            'client_name' => 'required|string',
-            'target_text' => 'required|string',
-            'chart_type' => 'required|string',
-            'chart_config' => 'required|array',
-            'chart_image' => 'nullable|string',
+            'client_name'    => 'required|string',
+            'target_text'    => 'required|string',
+            'chart_type'     => 'required|string',
+            'chart_config'   => 'required|array',
+            'chart_image'    => 'nullable|string',
         ]);
 
         $imagePath = null;
@@ -70,13 +69,6 @@ class RawRecordChartController extends Controller
             $validated['chart_type'],
             $validated['chart_config'],
             $imagePath
-        );
-
-        app(AuditLogService::class)->log(
-            action: 'chart_saved',
-            goalResultId: null,
-            details: 'Chart saved for raw record goal: ' . $validated['target_text'],
-            versionId: $validated['chart_config']['version_id'] ?? null
         );
 
         return response()->json([

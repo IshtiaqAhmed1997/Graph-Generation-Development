@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('chart_type')->nullable();
             $table->json('chart_config')->nullable();
             $table->string('chart_image_path')->nullable();
-            $table->integer('version_id')->nullable();
             $table->timestamps();
         });
     }

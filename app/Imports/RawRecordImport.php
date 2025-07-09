@@ -31,7 +31,7 @@ class RawRecordImport implements ToCollection
         $headingSkipped = false;
 
         foreach ($rows as $row) {
-            if (!$headingSkipped) {
+            if (! $headingSkipped) {
                 $headingSkipped = true;
 
                 continue;
@@ -39,7 +39,7 @@ class RawRecordImport implements ToCollection
 
             $date = isset($row[2]) ? date('Y-m-d', strtotime($row[2])) : null;
             $target = $row[4] ?? null;
-            $comboKey = $target . '|' . $date;
+            $comboKey = $target.'|'.$date;
 
             $data = [
                 'file_upload_id' => $this->fileUploadId,
@@ -65,7 +65,7 @@ class RawRecordImport implements ToCollection
                 'date_of_service' => 'required|date',
                 'target_text' => 'required|string|max:255',
                 'accuracy' => 'nullable|integer|min:0|max:100',
-                'cpt_code' => ['required', Rule::in(['97153', '97154', '97155', '97156', '0362T'])],
+                'cpt_code' => ['required', Rule::in(['97153', '97155', '97156', '97157'])],
                 'billable' => 'boolean',
 
             ]);

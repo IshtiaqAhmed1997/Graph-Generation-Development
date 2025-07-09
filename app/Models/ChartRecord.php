@@ -17,7 +17,6 @@ class ChartRecord extends Model
         'chart_type',
         'chart_config',
         'chart_image_path',
-        'version_id'
     ];
 
     protected $casts = [

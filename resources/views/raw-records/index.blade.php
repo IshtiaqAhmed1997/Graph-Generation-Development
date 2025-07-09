@@ -10,7 +10,7 @@
                     <tr>
                         <th class="px-4 py-2">Client</th>
                         <th class="px-4 py-2">Provider</th>
-                        <th class="px-4 py-2">Date of Service</th>
+                        <th class="px-4 py-2">Date</th>
                         <th class="px-4 py-2">Target</th>
                         <th class="px-4 py-2">Accuracy</th>
                     </tr>
@@ -20,8 +20,7 @@
                     <tr>
                         <td class="border px-4 py-2">{{ $record->client_name }}</td>
                         <td class="border px-4 py-2">{{ $record->provider_name }}</td>
-                        <td class="border px-4 py-2">{{ \Carbon\Carbon::parse($record->date_of_service)->format('d M, Y') }}
-</td>
+                        <td class="border px-4 py-2">{{ $record->date_of_service }}</td>
                         <td class="border px-4 py-2">{{ $record->target_text }}</td>
                         <td class="border px-4 py-2">{{ $record->accuracy }}</td>
                     </tr>
