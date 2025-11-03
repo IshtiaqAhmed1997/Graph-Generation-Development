@@ -1,108 +1,193 @@
 <x-app-layout>
+
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">All Charts Overview</h2>
+        <h2 class="font-semibold text-xl text-[#1565c0] leading-tight">
+            {{ __('All Charts Overview') }}
+        </h2>
     </x-slot>
+    <style>
+        /* 🌿 Pharma Chart Dashboard Theme */
+        .charts-section {
+            background-color: #f5f9ff;
+            min-height: calc(100vh - 120px);
+            padding: 2rem 1rem;
+        }
 
-    <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-        <div class="mb-6">
-            <label for="clientSelect" class="block font-medium mb-1">Select Client:</label>
-            <select id="clientSelect" class="form-select px-4 py-2 border rounded w-1/3">
-                @foreach($clients as $client)
-                    <option value="{{ $client }}">{{ $client }}</option>
-                @endforeach
-            </select>
-        </div>
+        .chart-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
 
-        <div class="mb-6 flex justify-end space-x-3">
-            <a id="downloadPdfBtn"
-               href="{{ route('charts.pdf', ['client_name' => $clients[0] ?? 'Default']) }}"
-               target="_blank"
-               class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition">
-                <i class="fas fa-file-pdf mr-2"></i> Download PDF Report
-            </a>
+        .chart-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
 
-            <a id="downloadZipBtn"
-               href="{{ route('charts.download.zip', ['client_name' => $clients[0] ?? 'Default']) }}"
-               target="_blank"
-               class="inline-flex items-center px-4 py-2 border border-blue-600 text-blue-600 text-sm font-medium rounded hover:bg-blue-600 hover:text-white transition">
-                <i class="fas fa-file-archive mr-2"></i> Download All Charts as ZIP
-            </a>
-        </div>
+        .form-select,
+        .form-control {
+            border-radius: 8px;
+            border: 1px solid #cfd8dc;
+            background-color: #fff;
+        }
 
-        <div class="bg-white p-4 shadow rounded">
-            <h3 class="text-lg font-semibold mb-4">Progress Chart (Goal-wise Accuracy)</h3>
-            <canvas id="rawRecordChart" height="400"></canvas>
-            <p id="masteryInfo" class="mt-2 text-green-700 font-medium"></p>
+        .btn-primary {
+            background-color: #1565c0;
+            border: none;
+            border-radius: 8px;
+        }
+
+        .btn-primary:hover {
+            background-color: #0d47a1;
+        }
+
+        .btn-outline-primary {
+            border-color: #1565c0;
+            color: #1565c0;
+            border-radius: 8px;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #1565c0;
+            color: #fff;
+        }
+
+        .chart-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #0d47a1;
+        }
+
+        #masteryInfo {
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            #clientSelect {
+                width: 100% !important;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: stretch;
+            }
+        }
+    </style>
+
+    <div class="charts-section">
+        <div class="container-fluid px-0">
+
+            <!-- Client Selector -->
+            <div class="mb-4">
+                <label for="clientSelect" class="form-label fw-medium">Select Client:</label>
+                <select id="clientSelect" class="form-select w-auto d-inline-block">
+                    @foreach($clients as $client)
+                        <option value="{{ $client }}">{{ $client }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Download Buttons -->
+            <div class="mb-4 d-flex justify-content-end align-items-center flex-wrap action-buttons gap-3">
+                <a id="downloadPdfBtn" href="{{ route('charts.pdf', ['client_name' => $clients[0] ?? 'Default']) }}"
+                    target="_blank" class="btn btn-danger d-flex align-items-center px-4">
+                    <i class="bi bi-file-earmark-pdf me-2"></i> Download PDF Report
+                </a>
+
+                <a id="downloadZipBtn"
+                    href="{{ route('charts.download.zip', ['client_name' => $clients[0] ?? 'Default']) }}"
+                    target="_blank" class="btn btn-outline-primary d-flex align-items-center px-4">
+                    <i class="bi bi-archive me-2"></i> Download All Charts (ZIP)
+                </a>
+            </div>
+
+            <!-- Chart Card -->
+            <div class="chart-card">
+                <h3 class="chart-title mb-4">Progress Chart (Goal-wise Accuracy)</h3>
+                <canvas id="rawRecordChart" height="400"></canvas>
+                <p id="masteryInfo" class="mt-3 text-success"></p>
+            </div>
         </div>
     </div>
+
+    <!-- Chart.js & Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const ctx = document.getElementById('rawRecordChart').getContext('2d');
-            const client = document.getElementById('clientSelect').value;
+            const clientSelect = document.getElementById('clientSelect');
 
-            fetch(`/charts/raw-records?client_name=${client}`)
-                .then(res => res.json())
-                .then(res => {
-                    const datasets = res.datasets;
+            const renderChart = (client) => {
+                fetch(`/charts/raw-records?client_name=${client}`)
+                    .then(res => res.json())
+                    .then(res => {
+                        const datasets = res.datasets;
+                        if (!datasets || !datasets.length) return;
 
-                    const baseline = {
-                        label: 'Baseline',
-                        data: datasets[0]?.data?.map(p => ({ x: p.x, y: 33 })),
-                        borderColor: 'orange',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        pointRadius: 0,
-                        fill: false
-                    };
+                        const baseline = {
+                            label: 'Baseline (33%)',
+                            data: datasets[0].data.map(p => ({ x: p.x, y: 33 })),
+                            borderColor: 'orange',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        };
 
-                    const mastery = {
-                        label: 'Mastery (80%)',
-                        data: datasets[0]?.data?.map(p => ({ x: p.x, y: 80 })),
-                        borderColor: 'gold',
-                        borderWidth: 2,
-                        borderDash: [4, 4],
-                        pointRadius: 0,
-                        fill: false
-                    };
+                        const mastery = {
+                            label: 'Mastery (80%)',
+                            data: datasets[0].data.map(p => ({ x: p.x, y: 80 })),
+                            borderColor: 'gold',
+                            borderWidth: 2,
+                            borderDash: [4, 4],
+                            pointRadius: 0,
+                            fill: false
+                        };
 
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            datasets: [baseline, mastery, ...datasets]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { position: 'left' },
-                                title: {
-                                    display: true,
-                                    text: `Frequency for ${datasets[0]?.label || 'Goal'}`,
-                                    font: { size: 18 }
-                                }
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                datasets: [baseline, mastery, ...datasets]
                             },
-                            scales: {
-                                x: {
-                                    type: 'time',
-                                    time: { unit: 'day' },
-                                    title: { display: true, text: 'Date of Service' },
-                                    ticks: {
-                                        maxRotation: 45,
-                                        minRotation: 45
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { position: 'bottom' },
+                                    title: {
+                                        display: true,
+                                        text: `Frequency for ${datasets[0].label || 'Goal'}`,
+                                        font: { size: 18 }
                                     }
                                 },
-                                y: {
-                                    min: 0,
-                                    max: 100,
-                                    title: { display: true, text: '% Accuracy' }
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: { unit: 'day' },
+                                        title: { display: true, text: 'Date of Service' }
+                                    },
+                                    y: {
+                                        min: 0,
+                                        max: 100,
+                                        title: { display: true, text: '% Accuracy' }
+                                    }
                                 }
                             }
-                        }
+                        });
                     });
-                });
+            };
+
+            // Initial Chart
+            renderChart(clientSelect.value);
+
+            // Update chart on client change
+            clientSelect.addEventListener('change', (e) => renderChart(e.target.value));
         });
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </x-app-layout>

@@ -1,142 +1,209 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+<nav x-data="{ open: false, sidebarCollapsed: false }">
+    <style>
+        .sidebar {
+            width: 250px;
+            background: #ffffff;
+            color: #1565c0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            z-index: 1030;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+        .sidebar.collapsed {
+            width: 80px;
+        }
 
-                    <x-nav-link :href="route('upload.index')" :active="request()->routeIs('upload.index')">
-                        Upload File
-                    </x-nav-link>
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #e3f2fd;
+        }
 
-                    <x-nav-link :href="route('raw-records.index')" :active="request()->routeIs('raw-records.index')">
-                        Raw Records
-                    </x-nav-link>
+        .sidebar-header .logo img {
+            height: 40px;
+            transition: all 0.3s ease;
+        }
 
-                    <x-nav-link :href="route('logs.index')" :active="request()->routeIs('logs.index')">
-                        Logs
-                    </x-nav-link>
+        .sidebar.collapsed .sidebar-header .logo {
+            display: none;
+        }
 
-                    <x-nav-link :href="route('charts.index')" :active="request()->routeIs('charts.index')">
-                        {{ __('Charts') }}
-                    </x-nav-link>
+        .sidebar-header .toggle-btn {
+            background: #1565c0;
+            border: none;
+            color: #fff;
+            border-radius: 6px;
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
 
-                </div>
+        .sidebar-header .toggle-btn:hover {
+            background: #0d47a1;
+        }
 
+        .sidebar .nav-link {
+            color: #1565c0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            margin: 0.25rem 0.75rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        .sidebar.collapsed .nav-link span {
+            display: none;
+        }
+
+        .sidebar .nav-link i {
+            font-size: 1.2rem;
+        }
+
+        .content-wrapper {
+            transition: margin-left 0.3s ease;
+            margin-left: 250px;
+            padding: 1rem;
+            background-color: #f5f9ff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .content-wrapper.collapsed {
+            margin-left: 80px;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                left: -250px;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .content-wrapper {
+                margin-left: 0 !important;
+            }
+
+            .sidebar-header .toggle-btn {
+                background: #1565c0;
+            }
+        }
+
+        /* Scrollbar Styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #bbdefb;
+            border-radius: 3px;
+        }
+    </style>
+
+    <!-- Sidebar -->
+    <div :class="{'active': open, 'collapsed': sidebarCollapsed}" class="sidebar" id="sidebarMenu">
+
+        <!-- Header Section (Logo + Button) -->
+        <div class="sidebar-header">
+            <div class="logo">
+                <a href="{{ route('dashboard') }}">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6e/Medical_Symbol_Blue_Cross.svg"
+                        alt="Pharma Logo">
+                </a>
             </div>
+
+            <button class="toggle-btn" @click="
+                if (window.innerWidth < 768) {
+                    open = !open;
+                } else {
+                    sidebarCollapsed = !sidebarCollapsed;
+                    document.querySelector('.content-wrapper').classList.toggle('collapsed');
+                }
+            ">
+                <!-- Dynamic icon -->
+                <i :class="{
+                    'bi bi-list': !sidebarCollapsed && !open,
+                    'bi bi-x': sidebarCollapsed || open
+                }"></i>
+            </button>
+        </div>
+
+        <ul class="nav flex-column mt-3">
+            <li>
+                <a href="{{ route('dashboard') }}"
+                    class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ route('upload.index') }}"
+                    class="nav-link {{ request()->routeIs('upload.index') ? 'active' : '' }}">
+                    <i class="bi bi-cloud-upload"></i> <span>Upload File</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ route('raw-records.index') }}"
+                    class="nav-link {{ request()->routeIs('raw-records.index') ? 'active' : '' }}">
+                    <i class="bi bi-collection"></i> <span>Raw Records</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ route('logs.index') }}"
+                    class="nav-link {{ request()->routeIs('logs.index') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text"></i> <span>Logs</span>
+                </a>
+            </li>
+
+            <li>
+                <a href="{{ route('charts.index') }}"
+                    class="nav-link {{ request()->routeIs('charts.index') ? 'active' : '' }}">
+                    <i class="bi bi-bar-chart-line"></i> <span>Charts</span>
+                </a>
+            </li>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
+            <li class="mt-3" x-data="{ openSettings: false }">
+                <a href="#" class="nav-link d-flex justify-content-between align-items-center"
+                    @click.prevent="openSettings = !openSettings">
+                    <span><i class="bi bi-gear"></i> Settings</span>
+                    <i :class="openSettings ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
+                </a>
 
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')" onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open"
-                    class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex"
-                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round"
-                            stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
+                <div x-show="openSettings" x-transition class="ps-3 mt-1">
+                    <a href="{{ route('profile.edit') }}" class="nav-link small py-1">Profile</a>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <a href="{{ route('logout') }}" class="nav-link small py-1 text-danger"
+                            onclick="event.preventDefault(); this.closest('form').submit();">Log Out</a>
+                    </form>
+                </div>
+            </li>
+        </ul>
     </div>
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-
-            <x-responsive-nav-link :href="route('upload.index')" :active="request()->routeIs('upload.index')">
-                Upload File
-            </x-responsive-nav-link>
-
-            <x-responsive-nav-link :href="route('raw-records.index')" :active="request()->routeIs('raw-records.index')">
-                Raw Records
-            </x-responsive-nav-link>
-
-            <x-responsive-nav-link :href="route('logs.index')" :active="request()->routeIs('logs.index')">
-                Logs
-            </x-responsive-nav-link>
-
-            <x-responsive-nav-link :href="route('charts.index')" :active="request()->routeIs('charts.index')">
-                {{ __('Charts') }}
-            </x-responsive-nav-link>
-
-        </div>
-
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 </nav>
